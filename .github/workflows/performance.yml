@@ -1,0 +1,40 @@
+name: Performance Tracking
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Weekly
+  workflow_dispatch:
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        pip install pandas matplotlib
+        sudo apt-get install -y build-essential cmake libbenchmark-dev
+        
+    - name: Run benchmarks
+      run: |
+        cmake -B build -DENABLE_BENCHMARKS=ON
+        cmake --build build
+        ./build/benchmarks --benchmark_format=json > results.json
+        
+    - name: Analyze and compare
+      run: |
+        python scripts/performance_tracker.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: performance_report.png
