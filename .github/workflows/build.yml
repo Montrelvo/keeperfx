@@ -1,4 +1,4 @@
-name: CI Build
+name: CI Build and Test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-test:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -24,17 +24,22 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential libsdl2-dev
+        sudo apt-get install -y libgtest-dev
 
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         choco install mingw -y
+        choco install gtest -y
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 
     - name: Build
       run: cmake --build build --config Release
+
+    - name: Run tests
+      run: ctest --test-dir build --output-on-failure
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
