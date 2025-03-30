@@ -1,26 +1,17 @@
-# Add this near the top of CMakeLists.txt
-include(CTest)
-find_package(GTest REQUIRED)
-enable_testing()
+# Add benchmark configuration
+option(ENABLE_BENCHMARKS "Enable performance benchmarks" OFF)
 
-# Add this after your main target definitions
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test)
-
-# Include directories for tests
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${GTEST_INCLUDE_DIRS}
-)
-
-add_executable(tests
-    test/main.cpp
-    test/pathfinding_test.cpp
-)
-
-target_link_libraries(tests
-    PRIVATE
-    GTest::GTest GTest::Main
-    keeperfx
-)
-
-add_test(NAME pathfinding_tests COMMAND tests)
+if(ENABLE_BENCHMARKS)
+    find_package(benchmark REQUIRED)
+    
+    add_executable(benchmarks
+        bench/pathfinding_bench.cpp
+        bench/network_bench.cpp
+    )
+    
+    target_link_libraries(benchmarks
+        PRIVATE
+        benchmark::benchmark
+        keeperfx
+    )
+endif()

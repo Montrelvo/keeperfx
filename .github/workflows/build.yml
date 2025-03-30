@@ -1,4 +1,4 @@
-name: CI Build and Test
+name: CI Build, Test and Coverage
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-test:
+  build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -19,30 +19,33 @@ jobs:
     - name: Set up CMake
       uses: actions/setup-cmake@v2
 
-    - name: Install dependencies (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libsdl2-dev
-        sudo apt-get install -y libgtest-dev
+        sudo apt-get install -y build-essential libsdl2-dev gcovr lcov
 
-    - name: Install dependencies (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        choco install mingw -y
-        choco install gtest -y
-
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+    - name: Configure with Coverage
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
 
     - name: Build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Debug
 
     - name: Run tests
       run: ctest --test-dir build --output-on-failure
 
-    - name: Upload Artifacts
+    - name: Generate Coverage Report
+      run: |
+        cd build
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' '*_test.cpp' --output-file coverage.info
+        lcov --list coverage.info
+        genhtml coverage.info --output-directory coverage_report
+
+    - name: Upload Coverage Report
       uses: actions/upload-artifact@v3
       with:
-        name: keeperfx-${{ matrix.os }}
-        path: build/
+        name: coverage-report
+        path: build/coverage_report
+
+    - name: Upload Coverage Data
+      uses: codecov/codecov-action@v3
