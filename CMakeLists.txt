@@ -6,6 +6,12 @@ enable_testing()
 # Add this after your main target definitions
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test)
 
+# Include directories for tests
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${GTEST_INCLUDE_DIRS}
+)
+
 add_executable(tests
     test/main.cpp
     test/pathfinding_test.cpp
